@@ -206,8 +206,7 @@ impl Tomcat {
             if path.is_file() {
                 if let Some(ext) = path.extension() {
                     if ext == "war" {
-                        let file_name = path.file_name().unwrap().to_str().unwrap();
-                        let dest_path = format!("{}/{}", self.deploy_path(), file_name);
+                        let dest_path = format!("{}/ROOT.war", self.deploy_path());
                         fs::copy(&path, dest_path)?;
                     }
                 }
