@@ -1,95 +1,106 @@
-local popcorn        = require 'popcorn'
-local borders        = require 'popcorn.borders'
-local wildcat        = require 'wildcat'
-local M              = {}
+local popcorn = require("popcorn")
+local borders = require("popcorn.borders")
+local wildcat = require("wildcat")
+local M = {}
 
-local checked_icon   = " 󰐾  "
+local checked_icon = " 󰐾  "
 local unchecked_icon = "    "
 
 local function create_content()
-    local default = wildcat.get_default_server()
-    local tomcat_path, tomcat_deploys = wildcat.get_tomcat_info()
-    local jboss_path, jboss_deploys = wildcat.get_jboss_info()
-    local content = {}
+  local default = wildcat.get_default_server()
+  local tomcat_path, tomcat_deploys = wildcat.get_tomcat_info()
+  local jboss_path, jboss_deploys = wildcat.get_jboss_info()
+  local content = {}
 
-    table.insert(content, { "Select server", "Type" })
-    if default == "Tomcat" then
-        table.insert(content, { unchecked_icon .. "JBoss" })
-        table.insert(content, { checked_icon .. "Tomcat" })
-    else
-        table.insert(content, { checked_icon .. "JBoss" })
-        table.insert(content, { unchecked_icon .. "Tomcat" })
-    end
+  table.insert(content, { "Select server", "Type" })
+  if default == "Tomcat" then
+    table.insert(content, { unchecked_icon .. "JBoss" })
+    table.insert(content, { checked_icon .. "Tomcat" })
+  else
+    table.insert(content, { checked_icon .. "JBoss" })
+    table.insert(content, { unchecked_icon .. "Tomcat" })
+  end
 
-    table.insert(content, { "" })
-    table.insert(content, { "Info", "Type" })
-    table.insert(content, { "󱄛  JBoss", "Boolean" })
+  table.insert(content, { "" })
+  table.insert(content, { "Info", "Type" })
+  table.insert(content, { "󱄛  JBoss", "Boolean" })
 
-    if jboss_path == "" then
-        table.insert(content, { "- Server Not Set" })
-    else
-        table.insert(content, { "- Path: " .. jboss_path })
-        table.insert(content, { "- Deploys: " .. jboss_deploys })
-    end
+  if jboss_path == "" then
+    table.insert(content, { "- Server Not Set" })
+  else
+    table.insert(content, { "- Path: " .. jboss_path })
+    table.insert(content, { "- Deploys: " .. jboss_deploys })
+  end
 
-    table.insert(content, { "  Tomcat", "Boolean" })
+  table.insert(content, { "  Tomcat", "Boolean" })
 
-    if tomcat_path == "" then
-        table.insert(content, { "- Server Not Set" })
-    else
-        table.insert(content, { "- Path: " .. tomcat_path })
-        table.insert(content, { "- Deploys: " .. tomcat_deploys })
-    end
+  if tomcat_path == "" then
+    table.insert(content, { "- Server Not Set" })
+  else
+    table.insert(content, { "- Path: " .. tomcat_path })
+    table.insert(content, { "- Deploys: " .. tomcat_deploys })
+  end
 
-    local width = #jboss_path + 8
-    if #tomcat_path + 8 > width then width = #tomcat_path + 8 end
-    if #jboss_deploys + 11 > width then width = #jboss_deploys + 11 end
-    if #tomcat_deploys + 11 > width then width = #tomcat_deploys + 11 end
+  local width = #jboss_path + 8
+  if #tomcat_path + 8 > width then
+    width = #tomcat_path + 8
+  end
+  if #jboss_deploys + 11 > width then
+    width = #jboss_deploys + 11
+  end
+  if #tomcat_deploys + 11 > width then
+    width = #tomcat_deploys + 11
+  end
 
-    width = width + 5
+  width = width + 5
 
-    return (width > 45 and width or 45), content
+  return (width > 45 and width or 45), content
 end
 
 function M.show()
-    local width, content = create_content()
-    local opts = {
-        width = width,
-        height = 13,
-        title = { "󰄛  Wildcat Servers", "Boolean" },
-        footer = { "<CR> to select", "String" },
-        border = borders.simple,
-        content = content,
-        do_after = function()
-            vim.api.nvim_win_set_cursor(0, { 2, 0 })
-            vim.cmd [[setl noma]]
+  local width, content = create_content()
+  local opts = {
+    width = width,
+    height = 13,
+    title = { "󰄛  Wildcat Servers", "Boolean" },
+    footer = { "<CR> to select", "String" },
+    border = borders.simple,
+    content = content,
+    do_after = function()
+      vim.api.nvim_win_set_cursor(0, { 2, 0 })
+      vim.cmd([[setl noma]])
 
-            vim.api.nvim_buf_set_keymap(0, 'n', '<CR>',
-                '<cmd>lua require("wildcat.popup").set()<CR>', { noremap = true, silent = true })
-        end
-    }
+      vim.api.nvim_buf_set_keymap(
+        0,
+        "n",
+        "<CR>",
+        '<cmd>lua require("wildcat.popup").set()<CR>',
+        { noremap = true, silent = true }
+      )
+    end,
+  }
 
-    popcorn:new(opts):pop()
+  popcorn:new(opts):pop()
 end
 
 function M.set()
-    vim.cmd [[setl ma]]
-    local line_nr = vim.fn.line('.')
+  vim.cmd([[setl ma]])
+  local line_nr = vim.fn.line(".")
 
-    if line_nr > 1 and line_nr < 4 then
-        local selected = vim.fn.getline('.')
-        local sel = tostring(selected):gsub(unchecked_icon, checked_icon)
-        vim.fn.setline(line_nr, sel)
+  if line_nr > 1 and line_nr < 4 then
+    local selected = vim.fn.getline(".")
+    local sel = tostring(selected):gsub(unchecked_icon, checked_icon)
+    vim.fn.setline(line_nr, sel)
 
-        local unselect_line = line_nr == 2 and 3 or 2
-        local unselected = vim.fn.getline(unselect_line)
-        local unsel = tostring(unselected):gsub(checked_icon, unchecked_icon)
-        vim.fn.setline(unselect_line, unsel)
-    end
+    local unselect_line = line_nr == 2 and 3 or 2
+    local unselected = vim.fn.getline(unselect_line)
+    local unsel = tostring(unselected):gsub(checked_icon, unchecked_icon)
+    vim.fn.setline(unselect_line, unsel)
+  end
 
-    wildcat.switch()
+  wildcat.switch()
 
-    vim.cmd [[setl noma]]
+  vim.cmd([[setl noma]])
 end
 
 return M
